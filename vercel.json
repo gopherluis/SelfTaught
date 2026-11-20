@@ -20,18 +20,14 @@
       ]
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "backend"
-      }
+      "src": "^/api/(.*)$",
+      "dest": "backend"
     },
     {
-      "source": "/(.*)",
-      "destination": {
-        "service": "frontend"
-      }
+      "src": "^(.*)$",
+      "dest": "frontend"
     }
   ]
 }
