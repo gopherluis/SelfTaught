@@ -69,7 +69,7 @@ export default function DashboardPage() {
     <AppLayout title="Dashboard de Estudos">
       <div className="space-y-8">
         {/* Quick Action Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-sky-950/40 via-slate-900 to-indigo-950/40 border border-sky-500/20 backdrop-blur-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl border border-sky-500/20 backdrop-blur-sm">
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
               Visão Geral do seu Aprendizado
