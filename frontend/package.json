@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "prebuild": "icacls .next /grant %USERNAME%:F /T || echo ok",
+
 
     "dev": "next dev",
     "build": "next build",
