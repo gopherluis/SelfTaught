@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     # Database
-    DATABASE_URL: str = "postgresql://postgres:LuisFilipi2005@db.xhwitzswulgpdnnlmtae.supabase.co:5432/postgres"
+    DATABASE_URL: str = "postgresql://postgres.xhwitzswulgpdnnlmtae:LuisFilipi2005@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [

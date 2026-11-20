@@ -39,6 +39,7 @@ out/
 .env.production.local
 
 # Databases & local data
+supabase/.temp/
 *.sqlite3
 *.db
 *.sqlite
