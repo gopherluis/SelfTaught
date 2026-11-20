@@ -1,142 +1,207 @@
-# Selftaught — Plataforma de Organização de Estudos e Aprendizagem Autodidata
+# SelfTaught
 
-**Selftaught** é uma plataforma moderna, modular e minimalista projetada para apoiar estudantes independentes, desenvolvedores, matemáticos, poliglotas e cientistas a estruturar seus estudos, documentar conhecimento e acompanhar o seu progresso de forma visual e intuitiva.
+## Visão geral
 
----
-
-## 🌟 Visão e Filosofia do Produto
-
-1. **Estrutura Híbrida**: Combina trilhas de aprendizagem sequenciais (*learning paths*) com anotações livres e interconectadas.
-2. **Foco na Execução**: Tarefas acionáveis, prioridades, datas de entrega e subtarefas integradas diretamente a módulos e trilhas.
-3. **Simplicidade e Produtividade**: Interface limpa (estilo Linear/SaaS moderno), suporte completo a temas claro/escuro, sem fricção desnecessária.
-4. **Sem Dependência Obrigatória de IA**: O núcleo do sistema funciona com total autonomia e privacidade local.
-5. **Multi-Disciplinar**: Concebido tanto para quem estuda Ciência da Computação quanto para quem aprende Cálculo, Mandarim, Biologia Molecular ou Finanças.
+SelfTaught é uma aplicação monorepo que combina um **frontend** desenvolvido com **Next.js 14** e um **backend** construído em **FastAPI**. O frontend consome a API do backend e armazena os dados em um banco PostgreSQL provisionado pelo **Supabase**. A implantação é feita na **Vercel**, que hospeda tanto o frontend quanto o backend via *Serverless Functions*.
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## Estrutura do projeto
 
-### Frontend
-- **Framework**: Next.js 14+ (App Router)
-- **Linguagem**: TypeScript
-- **Estilização**: Tailwind CSS com design system customizado e suporte Dark/Light mode
-- **Ícones**: Lucide React
-- **Componentes**: Primitivas acessíveis e modais responsivos
+```
+SelfTaught/
+├─ backend/                # API FastAPI
+│   ├─ app/
+│   │   ├─ api/            # Endpoints de versão 1
+│   │   ├─ core/           # Configurações, DB, segurança
+│   │   ├─ models/         # Modelos ORM (SQLAlchemy)
+│   │   ├─ schemas/        # Pydantic schemas
+│   │   └─ services/       # Lógica de negócios
+│   ├─ alembic/            # Migrações de banco
+│   └─ requirements.txt    # Dependências do backend
+│
+├─ frontend/               # Aplicação Next.js
+│   ├─ public/             # Arquivos estáticos (placeholder .keep)
+│   ├─ src/
+│   │   ├─ app/            # Páginas e roteamento de UI
+│   │   ├─ components/     # Componentes React reutilizáveis
+│   │   ├─ context/        # Contextos React (auth, tema)
+│   │   ├─ lib/            # Funções auxiliares (api, utils)
+│   │   └─ types/          # Definições TypeScript
+│   └─ package.json        # Scripts npm e dependências
+│
+├─ supabase/               # Projeto Supabase
+│   └─ migrations/         # Scripts SQL de migração
+│
+├─ .gitignore
+├─ .env.example            # Exemplo de variáveis de ambiente
+├─ AGENTS.md               # Diretrizes de engenharia para agentes
+├─ vercel.json             # Configuração de implantação Vercel
+└─ README.md               # Este documento
+```
+
+---
+
+## Configuração local
+
+1. **Clonar o repositório**
+   ```bash
+   git clone https://github.com/gopherluis/SelfTaught.git
+   cd SelfTaught
+   ```
+2. **Instalar dependências do backend**
+   ```bash
+   python -m venv venv
+   source venv/Scripts/activate   # Windows PowerShell
+   pip install -r backend/requirements.txt
+   ```
+3. **Instalar dependências do frontend**
+   ```bash
+   cd frontend
+   npm ci   # instala as dependências exatamente como no lockfile
+   ```
+4. **Configurar variáveis de ambiente**
+   - Copiar `.env.example` para `.env` e preencher os valores (por exemplo, `SUPABASE_URL`, `SUPABASE_KEY`, `DATABASE_URL`).
+   - O backend lê essas variáveis em `backend/app/core/config.py`.
+5. **Aplicar migrações do Supabase (local ou remoto)**
+   ```bash
+   supabase db push   # requer supabase CLI autenticado
+   ```
+6. **Iniciar servidores de desenvolvimento**
+   - Backend:
+     ```bash
+     uvicorn backend/app.main:app --reload
+     ```
+   - Frontend:
+     ```bash
+     cd frontend
+     npm run dev
+     ```
+   - A aplicação estará disponível em `http://localhost:3000`.
+
+---
+
+## Scripts npm úteis (frontend)
+
+| Script | Descrição |
+|--------|-----------|
+| `dev` | Inicia o servidor de desenvolvimento Next.js.
+| `build` | Compila a aplicação para produção. Produz a pasta `.next`.
+| `start` | Executa a aplicação a partir da compilação (`.next`).
+| `lint` | Executa ESLint e verifica formatação.
+| `test` | Executa testes unitários (se configurados).
+
+> **Nota:** O script `prebuild` foi removido porque continha comandos específicos do Windows que provocavam erros de permissão (`EPERM`). Caso seja necessário algum passo pré‑build, adicione‑o como script explícito e não como `prebuild`.
+
+---
+
+## Configuração do Vercel (`vercel.json`)
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "backend": {
+      "root": "backend",
+      "framework": "fastapi"
+    },
+    "frontend": {
+      "root": "frontend",
+      "framework": "nextjs",
+      "outputDirectory": ".next",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "backend",
+          "format": "url",
+          "env": "INTERNAL_BACKEND_URL"
+        }
+      ]
+    }
+  },
+  "rewrites": [
+    { "src": "^/api/(.*)$", "dest": "backend" },
+    { "src": "^(.*)$", "dest": "frontend" }
+  ]
+}
+```
+
+- **`outputDirectory`** informa ao Vercel onde encontrar os artefatos estáticos gerados pelo Next.js. Deve ser `".next"`.
+- **`rewrites`** tem prioridade sobre `routes`. A primeira regra encaminha todas as chamadas que iniciam com `/api/` para o serviço backend; a segunda captura tudo o que resta e serve a aplicação frontend.
+- **`bindings`** cria a variável de ambiente `INTERNAL_BACKEND_URL` contendo a URL interna do serviço backend.
+
+### Erros comuns de implantação Vercel
+
+| Erro | Causa provável | Solução |
+|------|----------------|---------|
+| `STATIC_BUILD_NO_OUT_DIR` | `outputDirectory` ausente ou incorreto | Verifique se `"outputDirectory": ".next"` está presente no bloco `frontend`.
+| `INVALID_RUNTIME` | Campo `runtime` com valor inválido (`nodejs`) | Remova o campo `runtime` ou use um valor suportado (`nodejs18` ou `nodejs20`).
+| 404 “This page doesn’t exist” | `rewrites` ausentes ou ordem incorreta | Garanta que a regra de API vem antes da catch‑all e que `rewrites` está definido em vez de `routes`.
+
+---
+
+## Testes
 
 ### Backend
-- **Framework**: Python FastAPI
-- **ORM / Banco de Dados**: SQLAlchemy 2.0 (Suporte completo a PostgreSQL / Supabase e SQLite local)
-- **Validação de Schemas**: Pydantic v2
-- **Migrações**: Alembic
-- **Segurança**: Criptografia de senhas (bcrypt/passlib), autenticação JWT Bearer tokens e isolamento estrito de dados por usuário
-
-### Testes
-- **Backend**: Pytest, HTTPX (TestClient com SQLite in-memory para testes ultrarrápidos e isolados)
-- **Frontend / E2E**: Playwright / Scripts de validação de fluxo
-
----
-
-## 📂 Estrutura do Projeto
-
-```
-selftaught/
-├── backend/                  # API REST em FastAPI
-│   ├── alembic/             # Migrações de banco de dados
-│   ├── app/
-│   │   ├── api/v1/          # Endpoints REST (auth, paths, modules, tasks, notes, resources, dashboard)
-│   │   ├── core/            # Configurações, segurança e conexão de banco
-│   │   ├── models/          # Modelos de dados SQLAlchemy
-│   │   ├── schemas/         # Schemas de validação Pydantic
-│   │   ├── services/        # Lógica de negócio e estatísticas
-│   │   └── main.py          # Ponto de entrada FastAPI
-│   ├── tests/               # Testes automatizados com Pytest
-│   ├── requirements.txt
-│   └── pytest.ini
-├── frontend/                 # Aplicação Next.js (App Router)
-│   ├── src/
-│   │   ├── app/             # Rotas e páginas da aplicação
-│   │   ├── components/      # Componentes UI reutilizáveis
-│   │   ├── context/         # Provedores de contexto (Auth, Tema)
-│   │   ├── lib/             # Cliente de API e utilitários
-│   │   └── types/           # Tipagens TypeScript
-│   ├── package.json
-│   └── tailwind.config.ts
-├── docs/                     # Documentação técnica e funcional
-│   ├── architecture.md      # Detalhes de arquitetura e modelo de dados
-│   ├── requirements.md      # Requisitos funcionais e não-funcionais
-│   └── roadmap.md           # Roadmap de evolução do produto
-├── .env.example              # Modelo de variáveis de ambiente
-├── .gitignore
-├── AGENTS.md                 # Guia de desenvolvimento para agentes de IA
-└── README.md
-```
-
----
-
-## ⚡ Instalação e Execução
-
-### Pré-requisitos
-- Python 3.11+ (testado em Python 3.13)
-- Node.js 18+ (testado em Node 20+)
-- npm ou pnpm
-
-### 1. Configurando o Backend
 
 ```bash
-cd selftaught/backend
-
-# Criar ambiente virtual
-python -m venv venv
-
-# Ativar ambiente virtual
-# No Windows PowerShell:
-.\venv\Scripts\Activate.ps1
-# No Linux/macOS:
-source venv/bin/activate
-
-# Instalar dependências
-pip install -r requirements.txt
-
-# Executar a API
-uvicorn app.main:app --reload --port 8000
-```
-
-A documentação interativa da API estará disponível em: `http://127.0.0.1:8000/docs`
-
-### 2. Executando os Testes do Backend
-
-```bash
-cd selftaught/backend
+cd backend
 pytest -v
 ```
 
-### 3. Configurando o Frontend
+Os testes estão localizados em `backend/tests/` e cobrem autenticação, CRUD de recursos e endpoints de usuário.
+
+### Frontend
 
 ```bash
-cd selftaught/frontend
-
-# Instalar dependências
-npm install
-
-# Iniciar servidor de desenvolvimento
-npm run dev
+cd frontend
+npm run test
 ```
 
-A aplicação web estará disponível em: `http://localhost:3000`
+> **Observação:** Por padrão o projeto ainda não contém testes de UI; adicione-os conforme a necessidade.
 
 ---
 
-## 🔒 Variáveis de Ambiente
+## Resolução de erros frequentes (local)
 
-Copie o arquivo `.env.example` para `.env` tanto no backend quanto no frontend conforme necessário:
-
-```ini
-SECRET_KEY="sua-chave-secreta-forte-gerada-aleatoriamente"
-DATABASE_URL="sqlite+aiosqlite:///./selftaught.db" # Ou postgresql+asyncpg://user:pass@host:5432/db
-NEXT_PUBLIC_API_URL="http://127.0.0.1:8000/api/v1"
-```
+1. **Lock de Git (`index.lock`)**
+   - O erro ocorre quando outro processo mantém o lock. Feche IDEs, terminais ou processos Git em execução e delete o arquivo manualmente:
+     ```bash
+     rm -f .git/index.lock
+     ```
+   - Se o arquivo não existir, verifique permissões de escrita na pasta `.git`.
+2. **`EPERM` ao executar `npm run build`**
+   - Causado por scripts que tentam manipular arquivos protegidos (por exemplo, `icacls`). Certifique‑se de que o `package.json` não contém um script `prebuild` que execute comandos de sistema. Remova‑o ou substitua por uma função Node.js.
+3. **Problemas de dependência (`npm WARN unknown env config "cache-dir"`)**
+   - Aviso inofensivo; pode ser silenciado removendo a entrada `cache-dir` do `.npmrc`. Não impede a construção.
+4. **Falha ao iniciar backend (`uvicorn` não encontra módulos)**
+   - Garanta que o ambiente virtual esteja ativado e que `PYTHONPATH` inclua o diretório `backend`. Use `python -m backend.app.main` para validar.
+5. **Variáveis de ambiente ausentes**
+   - A aplicação falhará ao iniciar sem `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_KEY` ou `INTERNAL_BACKEND_URL`. Confirme se o arquivo `.env` contém todas as chaves listadas em `backend/app/core/config.py`.
 
 ---
 
-## 📄 Licença
-Distribuído sob licença MIT. Consulte `LICENSE` para maiores detalhes.
+## Processo de CI/CD (simplificado)
+
+1. **Commit** → GitHub Actions (ou outro CI) executa `pytest` no backend e `npm run lint` no frontend.
+2. **Push para `main`** → Vercel detecta o novo commit, executa `npm ci && npm run build` no frontend e `pip install -r requirements.txt && uvicorn ...` na função backend.
+3. **Deploy concluído** → Verifique a URL gerada no painel Vercel.
+
+---
+
+## Contribuindo
+
+- **Fork** o repositório e crie uma branch para sua feature.
+- Siga as convenções de código: PEP 8 para Python, `eslint`/`prettier` para TypeScript.
+- Execute os testes antes de abrir um Pull Request.
+- Atualize o arquivo `CHANGELOG.md` (se existente) com uma breve descrição da mudança.
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT. Consulte o arquivo `LICENSE` para detalhes.
+
+---
+
+*Este documento será mantido atualizado conforme mudanças de arquitetura ou fluxo de trabalho.*
