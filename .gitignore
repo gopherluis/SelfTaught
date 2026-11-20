@@ -41,6 +41,7 @@ out/
 # Databases & local data
 *.sqlite3
 *.db
+*.sqlite
 selftaught.db
 selftaught_test.db
 
@@ -63,4 +64,3 @@ playwright-report/
 *.swo
 .DS_Store
 Thumbs.db
-selftaught.db
