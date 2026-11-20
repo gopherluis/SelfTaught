@@ -9,8 +9,6 @@
     "frontend": {
       "root": "frontend",
       "framework": "nextjs",
-      "outputDirectory": ".next",
-      "runtime": "nodejs18",
       "bindings": [
         {
           "type": "service",
@@ -21,14 +19,18 @@
       ]
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "^/api/(.*)$",
-      "dest": "backend"
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
     },
     {
-      "src": "^(.*)$",
-      "dest": "frontend"
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
     }
   ]
 }
