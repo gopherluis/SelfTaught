@@ -1,7 +1,11 @@
+
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -10,31 +14,18 @@ import app.models  # Ensures all models are loaded
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Synchronous table creation on startup
-    Base.metadata.create_all(bind=engine)
+    # Initialize database tables on application startup.
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("DATABASE STARTUP: Tables initialized successfully.")
+    except Exception:
+        print("DATABASE STARTUP ERROR: Failed to initialize database.")
+        raise
+
     yield
 
-from sqlalchemy import text
 
-@app.get("/api/health/database")
-def database_health():
-    try:
-        with engine.connect() as connection:
-            result = connection.execute(text("SELECT 1"))
-
-            return {
-                "database": "connected",
-                "query_result": result.scalar()
-            }
-
-    except Exception as e:
-        print(f"DATABASE ERROR: {repr(e)}")
-        return JSONResponse(
-            status_code=503,
-            content={"database": "disconnected"}
-        )
-
-
+# Initialize FastAPI application
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Plataforma de Organização de Estudos e Aprendizagem Autodidata",
@@ -45,7 +36,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS setup
+
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
@@ -55,16 +47,20 @@ app.add_middleware(
 )
 
 
+# Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Fallback handler for unhandled exceptions."""
+    print(f"UNHANDLED ERROR: {type(exc).__name__}: {exc}")
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Ocorreu um erro interno no servidor.", "error": str(exc) if settings.DEBUG else None},
+        content={
+            "detail": "Ocorreu um erro interno no servidor."
+        },
     )
 
 
-# Root healthcheck
+# API healthcheck
 @app.get("/api/health", tags=["Sistema"])
 def health_check():
     return {
@@ -74,5 +70,35 @@ def health_check():
     }
 
 
-# Include V1 API Routers
-app.include_router(api_router, prefix=settings.API_V1_STR)
+# Database healthcheck
+@app.get("/api/health/database", tags=["Sistema"])
+def database_health():
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT 1"))
+
+            return {
+                "database": "connected",
+                "query_result": result.scalar(),
+            }
+
+    except Exception as exc:
+        print(
+            f"DATABASE CONNECTION ERROR: "
+            f"{type(exc).__name__}: {exc}"
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "database": "disconnected",
+                "detail": "Database connection failed.",
+            },
+        )
+
+
+# Register API V1 routers
+app.include_router(
+    api_router,
+    prefix=settings.API_V1_STR,
+)
