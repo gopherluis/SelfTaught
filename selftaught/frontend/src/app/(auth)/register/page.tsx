@@ -31,7 +31,24 @@ export default function RegisterPage() {
       login(res.access_token, res.user);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.detail || "Erro ao realizar cadastro. Tente novamente.");
+      // Normalizar mensagem de erro para string
+      let message = "";
+      if (err?.detail) {
+        if (typeof err.detail === "string") {
+          message = err.detail;
+        } else if (Array.isArray(err.detail) && err.detail[0]?.msg) {
+          message = err.detail[0].msg;
+        } else {
+          try {
+            message = JSON.stringify(err.detail);
+          } catch (_) {
+            message = "Erro inesperado.";
+          }
+        }
+      } else {
+        message = "Erro ao realizar cadastro. Tente novamente.";
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
