@@ -14,6 +14,26 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     yield
 
+from sqlalchemy import text
+
+@app.get("/api/health/database")
+def database_health():
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT 1"))
+
+            return {
+                "database": "connected",
+                "query_result": result.scalar()
+            }
+
+    except Exception as e:
+        print(f"DATABASE ERROR: {repr(e)}")
+        return JSONResponse(
+            status_code=503,
+            content={"database": "disconnected"}
+        )
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
