@@ -10,7 +10,7 @@
       "root": "frontend",
       "framework": "nextjs",
       "outputDirectory": ".next",
-      "runtime": "nodejs",
+      "runtime": "nodejs18",
       "bindings": [
         {
           "type": "service",
