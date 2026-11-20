@@ -63,3 +63,4 @@ playwright-report/
 *.swo
 .DS_Store
 Thumbs.db
+selftaught.db
