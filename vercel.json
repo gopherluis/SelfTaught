@@ -9,6 +9,7 @@
     "frontend": {
       "root": "frontend",
       "framework": "nextjs",
+      "outputDirectory": ".next",
       "bindings": [
         {
           "type": "service",
