@@ -4,6 +4,8 @@
 
 SelfTaught é uma aplicação monorepo que combina um **frontend** desenvolvido com **Next.js 14** e um **backend** construído em **FastAPI**. O frontend consome a API do backend e armazena os dados em um banco PostgreSQL provisionado pelo **Supabase**. A implantação é feita na **Vercel**, que hospeda tanto o frontend quanto o backend via *Serverless Functions*.
 
+Link de acesso: https://selftaught-5n3x-sigma.vercel.app
+PS.: Esse programa é feito apenas com propósito de aprendizado, todos os dados da aplicação são descartáveis, não insira nenhum dado sensível.
 ---
 
 ## Estrutura do projeto
